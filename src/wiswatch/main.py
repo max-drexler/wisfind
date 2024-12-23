@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import json
 import ssl
 import sys
 from typing import Iterator, Literal
@@ -18,7 +19,7 @@ else:
 
 import aiomqtt
 
-from wiswatch.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER
+from wiswatch.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER, WNM
 
 LOG = logging.getLogger("wiswatch")
 
@@ -86,7 +87,13 @@ async def async_main():
         "reconnect_attempts": -1,
     }
     async for msg in mqtt_connection(info):
-        print(msg.payload)
+        #print(msg.payload)
+        payload = msg.payload.decode('utf-8')
+        try:
+            print(WNM(**json.loads(payload)))
+        except ValidationError as e:
+            print(payload)
+            raise
 
 
 def main():
