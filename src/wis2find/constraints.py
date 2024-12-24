@@ -4,14 +4,13 @@ from typing import Callable
 
 from wiswatch.definitions import WNM
 
-
 ConstraintType = Callable[[WNM], bool]
 ActionType = Callable[[WNM, ...], None]
 
 ## Somehow represent the "constraint"
 ##
 ## class WNMConstraint
-## -pubtime 
+## -pubtime
 
 ## if all(f(WNM[key] for f in pipeline):
 ##  action(WNM)

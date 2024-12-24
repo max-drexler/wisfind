@@ -141,7 +141,7 @@ class WNMProperties(BaseModel):
 
     # Req 9.B: The temporal description SHALL be in RFC3339 format.
     # Req 9.C: The temporal description SHALL be in UTC.
-    start_datetime: WisDatetime | None = Field(default=NOTSET) 
+    start_datetime: WisDatetime | None = Field(default=NOTSET)
 
     # Req 9.B: The temporal description SHALL be in RFC3339 format.
     # Req 9.C: The temporal description SHALL be in UTC.
