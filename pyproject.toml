@@ -23,7 +23,7 @@ classifiers = [
 dependencies = ["aiomqtt", "pydantic"]
 
 [project.scripts]
-wis2find = "wiswatch.main:main"
+wis2find = "wis2find.main:main"
 
 [project.urls]
 Documentation = "https://github.com/Max Drexler/wis2find#readme"
@@ -35,5 +35,5 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/wiswatch/__init__.py"
+path = "src/wis2find/__init__.py"
 
