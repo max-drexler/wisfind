@@ -1,16 +1,15 @@
-"""wis2find.main
-"""
+"""wis2find.main"""
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import functools
 import json
 import logging
-import functools
 import ssl
 import sys
-from typing import Iterator, Literal
+from typing import Callable, Iterator, Literal
 
 if sys.version_info >= (3, 10):
     from typing import TypedDict
@@ -19,27 +18,24 @@ else:
 
 import aiomqtt
 from pydantic import ValidationError
-
 from wis2find.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER, WNM, Topic
 
 LOG = logging.getLogger("wis2find")
 
-CLI_USAGE = "usage: wis2find [GLOBAL_OPTS] [CONSTRAINT..CONSTRAINT] [ACTION]"""
+CLI_USAGE = "usage: wis2find [GLOBAL_OPTS] [CONSTRAINT..CONSTRAINT] [ACTION]" ""
 
 DEFAULT_TOPICS = [Topic.ALL_CORE_DATA.value]
 
 ## possible wis2find actions
 
-def emit_json(msg: WNM | dict, end='\n') -> None:
+
+def emit_json(msg: WNM | dict, end="\n") -> None:
     """Prints the WNM to stdout as JSON."""
-    if isinstance(msg, WNM):
-        data = msg.model_dump_json(indent=2)
-    else:
-        data = json.dumps(msg, indent=2)
+    data = msg.model_dump_json(indent=2) if isinstance(msg, WNM) else json.dumps(msg, indent=2)
     print(data, end=end)
 
 
-DEFAULT_ACTION = functools.partial(emit_json, end='\n')
+DEFAULT_ACTION = functools.partial(emit_json, end="\n")
 
 
 class MqttConnectionInfo(TypedDict):
@@ -94,34 +90,45 @@ async def iter_mqtt(info: MqttConnectionInfo) -> Iterator[aiomqtt.Message]:
             await asyncio.sleep(info["reconnect_delay"])
 
 
-async def wis_event_loop(connection_info: MqttConnectionInfo, constraint_check: Callable[[WNM | dict], bool] | None=None, action: Callable[[WNM | dict], None] | None=None, validate_wnm=True) -> None:
-    """Run the async io loop: receives MQTT messages, checks messages for validity, and performs an action on the message.
+async def wis_event_loop(
+    connection_info: MqttConnectionInfo,
+    constraint_check: Callable[[WNM | dict], bool] | None = None,
+    action: Callable[[WNM | dict], None] | None = None,
+    validate_wnm=True,
+) -> None:
+    """Run the async io loop: receives MQTT messages, checks messages for validity,
+    and performs an action on the message.
 
     Args:
-        connection_info (MqttConnectionInfo): How to establish a MQTT connection to receive messages from.
-        constraint_check (Callable[[WNM | dict], bool] | None): A function that will be passed all received WIS2 messages and returns a boolean indicating if the action should be performed on the message. Default None.
-        action (Callable[[WNM | dict], None] | None): A function that will be passsed all received AND checked WIS2 messages. Default None.
-        validate_wnm (bool): Should received messages be checked to make sure they follow the WIS2 Notification Message (WNM) standard. Default True.
+        connection_info (MqttConnectionInfo): How to establish a MQTT connection to
+        receive messages from.
+        constraint_check (Callable[[WNM | dict], bool] | None): A function that will
+        be passed all received WIS2 messages and returns a boolean indicating if the
+        action should be performed on the message. Default None.
+        action (Callable[[WNM | dict], None] | None): A function that will be passsed
+        all received AND checked WIS2 messages. Default None.
+        validate_wnm (bool): Should received messages be checked to make sure they
+        follow the WIS2 Notification Message (WNM) standard. Default True.
     """
     action = DEFAULT_ACTION if action is None else action
     async for msg in iter_mqtt(connection_info):
         try:
             payload = msg.payload.decode("utf-8")
         except ValueError:
-            LOG.warning("wis_event_loop got invalid bytes from '%s'.", connection_info['endpoint'])
+            LOG.warning("wis_event_loop got invalid bytes from '%s'.", connection_info["endpoint"])
             continue
         try:
             data = json.loads(payload)
         except ValueError:
-            LOG.warning("wis_event_loop got invalid JSON from '%s'.", connection_info['endpoint'])
+            LOG.warning("wis_event_loop got invalid JSON from '%s'.", connection_info["endpoint"])
             continue
         if validate_wnm:
             try:
                 data = WNM(**data)
             except ValidationError:
-                LOG.warning("wis_event_loop got invalid WNM from '%s'.", connection_info['endpoint'])
+                LOG.warning("wis_event_loop got invalid WNM from '%s'.", connection_info["endpoint"])
                 raise
-        
+
         if constraint_check is not None and not constraint_check(data):
             LOG.info("wis_event_loop message '%s' didn't meet user constraints.", str(data))
             continue
@@ -131,22 +138,37 @@ async def wis_event_loop(connection_info: MqttConnectionInfo, constraint_check: 
 
 def parse_global_args():
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(prog='wis2find', usage=CLI_USAGE, allow_abbrev=False)
+    parser = argparse.ArgumentParser(prog="wis2find", usage=CLI_USAGE, allow_abbrev=False)
 
-    parser.add_argument('--version', action='store_true', help='Show version information and exit.')
-    parser.add_argument('--verbose', action='store_true', help='Print verbose log information to stderr.')
-    parser.add_argument('--quiet', action='store_true', help='Disable all log output to stderr.')
+    parser.add_argument("--version", action="store_true", help="Show version information and exit.")
+    parser.add_argument("--verbose", action="store_true", help="Print verbose log information to stderr.")
+    parser.add_argument("--quiet", action="store_true", help="Disable all log output to stderr.")
 
     # TODO: rename argument
-    parser.add_argument('--no-wnm-validate', action='store_true', help="Permit WIS2 messages that don't follow the WIS2 Notification Message standard.")
+    parser.add_argument(
+        "--no-wnm-validate",
+        action="store_true",
+        help="Permit WIS2 messages that don't follow the WIS2 Notification Message standard.",
+    )
     # TODO: add argument for validating download.
 
-    conn_group = parser.add_argument_group(title='connection options')
-    conn_group.add_argument('-B', dest='broker', default=DEFAULT_BROKER, help="WIS2 global broker or cache to connect to. Default is '%(default)s'.")
-    conn_group.add_argument('-T', dest='topic', nargs='+', default=DEFAULT_TOPICS, help='One or more WIS2 topics to subscribe to.')
-    conn_group.add_argument('-U', dest='user', default=WIS2_CORE_USER, help='Username to connect with. Use default for free WIS2 data.')
-    conn_group.add_argument('-P', dest='passwd', default=WIS2_CORE_PASS, help='Password to connect with. Use default for free WIS2 data.')
-    conn_group.add_argument('--websocket', action='store_true', help='Use MQTT over WebSocket instead of TCP.')
+    conn_group = parser.add_argument_group(title="connection options")
+    conn_group.add_argument(
+        "-B",
+        dest="broker",
+        default=DEFAULT_BROKER,
+        help="WIS2 global broker or cache to connect to. Default is '%(default)s'.",
+    )
+    conn_group.add_argument(
+        "-T", dest="topic", nargs="+", default=DEFAULT_TOPICS, help="One or more WIS2 topics to subscribe to."
+    )
+    conn_group.add_argument(
+        "-U", dest="user", default=WIS2_CORE_USER, help="Username to connect with. Use default for free WIS2 data."
+    )
+    conn_group.add_argument(
+        "-P", dest="passwd", default=WIS2_CORE_PASS, help="Password to connect with. Use default for free WIS2 data."
+    )
+    conn_group.add_argument("--websocket", action="store_true", help="Use MQTT over WebSocket instead of TCP.")
 
     # leftover should have a list of constraints and an action
     parsed, leftover = parser.parse_known_args()
@@ -159,8 +181,8 @@ def parse_global_args():
 
 def parse_action_constraints(args: list[str] | None):
     if not args:
-        return None, None 
-    return None, None 
+        return None, None
+    return None, None
 
 
 def main():

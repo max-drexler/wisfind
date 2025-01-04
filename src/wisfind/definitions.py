@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, FtpUrl, HttpUrl, model_validator, model_serializer
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, FtpUrl, HttpUrl, model_serializer, model_validator
 from typing_extensions import Annotated, Literal, Self
 
 # Core data accessible by 'everyone'
@@ -87,6 +87,7 @@ class WNMModel(BaseModel):
         """Serialize the model, removing all keys where the value is NOTSET."""
         return {field: getattr(self, field) for field in self.model_fields_set}
 
+
 class GeoJSON(WNMModel):
     pass
 
@@ -118,7 +119,9 @@ class WNMContent(WNMModel):
 
     encoding: WNMContentEncoding = Field(description="The character encoding of the data.")
 
-    value: str = Field(description="The inline content of the file base64 encoded.", maximum_length=wnm_content_max_bytes)
+    value: str = Field(
+        description="The inline content of the file base64 encoded.", maximum_length=wnm_content_max_bytes
+    )
 
     # Req 10.A:
     # For data whose resulting size in the encoded form is greater than 4 096 bytes,
@@ -295,7 +298,6 @@ class WNM(WNMModel):
         if self.conformsTo is not NOTSET and self.version is not NOTSET:
             raise ValueError("Cannot specify both: 'version' and 'conformsTo'!")
         return self
-
 
     @model_validator(mode="after")
     def check_links_rel(self) -> Self:
