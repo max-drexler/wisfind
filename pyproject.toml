@@ -18,9 +18,9 @@ dependencies = ["aiomqtt", "pydantic", "typing-extensions"]
 wisfind = "wisfind.main:main"
 
 [project.urls]
-Documentation = "https://github.com/Max Drexler/wisfind#readme"
-Issues = "https://github.com/Max Drexler/wisfind/issues"
-Source = "https://github.com/Max Drexler/wisfind"
+Documentation = "https://github.com/max-drexler/wisfind#readme"
+Issues = "https://github.com/max-drexler/wisfind/issues"
+Source = "https://github.com/max-drexler/wisfind"
 
 [build-system]
 requires = ["hatchling"]
@@ -47,5 +47,4 @@ select = [
     # isort
     "I",
 ]
-
 
