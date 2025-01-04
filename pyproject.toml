@@ -1,7 +1,7 @@
 [project]
-name = "wis2find"
+name = "wisfind"
 dynamic = ["version"]
-description = 'WMO Information System II (WIS2) "find-like" CLI client.'
+description = 'WMO Information System II (WIS2) client with filtering and validating built-in.'
 readme = "README.md"
 requires-python = ">=3.7"
 license = "MIT"
@@ -10,30 +10,42 @@ authors = [
   { name = "Max Drexler", email = "mndrexler@gmail.com" },
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = ["aiomqtt", "pydantic"]
+dependencies = ["aiomqtt", "pydantic", "typing-extensions"]
 
 [project.scripts]
-wis2find = "wis2find.main:main"
+wisfind = "wisfind.main:main"
 
 [project.urls]
-Documentation = "https://github.com/Max Drexler/wis2find#readme"
-Issues = "https://github.com/Max Drexler/wis2find/issues"
-Source = "https://github.com/Max Drexler/wis2find"
+Documentation = "https://github.com/Max Drexler/wisfind#readme"
+Issues = "https://github.com/Max Drexler/wisfind/issues"
+Source = "https://github.com/Max Drexler/wisfind"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/wis2find/__init__.py"
+path = "src/wisfind/__init__.py"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+
 
