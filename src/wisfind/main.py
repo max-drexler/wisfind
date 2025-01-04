@@ -1,4 +1,4 @@
-"""wis2find.main"""
+"""wisfind.main"""
 
 from __future__ import annotations
 
@@ -18,15 +18,15 @@ else:
 
 import aiomqtt
 from pydantic import ValidationError
-from wis2find.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER, WNM, Topic
+from wisfind.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER, WNM, Topic
 
-LOG = logging.getLogger("wis2find")
+LOG = logging.getLogger("wisfind")
 
-CLI_USAGE = "usage: wis2find [GLOBAL_OPTS] [CONSTRAINT..CONSTRAINT] [ACTION]" ""
+CLI_USAGE = "usage: wisfind [GLOBAL_OPTS] [CONSTRAINT..CONSTRAINT] [ACTION]" ""
 
 DEFAULT_TOPICS = [Topic.ALL_CORE_DATA.value]
 
-## possible wis2find actions
+## possible wisfind actions
 
 
 def emit_json(msg: WNM | dict, end="\n") -> None:
@@ -138,7 +138,7 @@ async def wis_event_loop(
 
 def parse_global_args():
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(prog="wis2find", usage=CLI_USAGE, allow_abbrev=False)
+    parser = argparse.ArgumentParser(prog="wisfind", usage=CLI_USAGE, allow_abbrev=False)
 
     parser.add_argument("--version", action="store_true", help="Show version information and exit.")
     parser.add_argument("--verbose", action="store_true", help="Print verbose log information to stderr.")

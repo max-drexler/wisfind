@@ -1,4 +1,4 @@
-"""wis2find.definitions
+"""wisfind.definitions
 
 WIS2 definitions.
 """
