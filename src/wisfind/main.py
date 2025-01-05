@@ -4,20 +4,17 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import functools
 import json
 import logging
 import ssl
 import sys
-from typing import Callable, Iterator, Literal
-
-if sys.version_info >= (3, 10):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
+from typing import TYPE_CHECKING, AsyncIterator, Awaitable, Callable, Literal
 
 import aiomqtt
 from pydantic import ValidationError
+from typing_extensions import TypedDict
+
+from wisfind.action import emit_json
 from wisfind.definitions import DEFAULT_BROKER, WIS2_CORE_PASS, WIS2_CORE_USER, WNM, Topic
 
 LOG = logging.getLogger("wisfind")
@@ -26,28 +23,33 @@ CLI_USAGE = "usage: wisfind [GLOBAL_OPTS] [CONSTRAINT..CONSTRAINT] [ACTION]" ""
 
 DEFAULT_TOPICS = [Topic.ALL_CORE_DATA.value]
 
-## possible wisfind actions
+# Mapping between the CLI argument and action function
+
+ACTION_MAP = {
+    "-print": emit_json(),
+    "-pprint": emit_json(indent=2),
+    "-print0": emit_json(end="\0"),
+    "-fprint": None,
+    "-fprint0": None,
+    "-download": None,
+    "-fdownload": None,
+}
+
+DEFAULT_ACTION = ACTION_MAP["-print"]
 
 
-def emit_json(msg: WNM | dict, end="\n") -> None:
-    """Prints the WNM to stdout as JSON."""
-    data = msg.model_dump_json(indent=2) if isinstance(msg, WNM) else json.dumps(msg, indent=2)
-    print(data, end=end)
+if TYPE_CHECKING:
 
+    class MqttConnectionInfo(TypedDict):
+        """How to create a MQTT connection to a WIS2 global broker or cache."""
 
-DEFAULT_ACTION = functools.partial(emit_json, end="\n")
-
-
-class MqttConnectionInfo(TypedDict):
-    """How to create a MQTT connection to a WIS2 global broker or cache."""
-
-    endpoint: str
-    topics: list[str]
-    user: str
-    password: str
-    transport: Literal["tcp", "websockets"]
-    reconnect_delay: float
-    reconnect_attempts: int
+        endpoint: str
+        topics: list[str]
+        user: str
+        password: str
+        transport: Literal["tcp", "websockets"]
+        reconnect_delay: float
+        reconnect_attempts: int
 
 
 async def iter_mqtt(info: MqttConnectionInfo) -> Iterator[aiomqtt.Message]:
